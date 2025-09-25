@@ -1,0 +1,21 @@
+[client]
+showErrorDetails = "type"
+showSidebarNavigation = false
+
+[runner]
+magicEnabled = false
+fastReruns = false
+
+[server]
+runOnSave = true
+
+[theme]
+# primaryColor =
+# backgroundColor =
+# secondaryBackgroundColor =
+# textColor =
+# linkColor =
+# codeBackgroundColor =
+# font = "cool-font, fallback-cool-font, sans-serif"
+# codeFont =
+# baseRadius =
