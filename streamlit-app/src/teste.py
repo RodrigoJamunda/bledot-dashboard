@@ -41,32 +41,32 @@ def test_supabase_data():
     print("Initializing SupabaseData...")
     supabase = SupabaseData(SUPABASE_URL, SUPABASE_KEY)
     
-    # Test parameters - using empresa_id instead of client_id
-    empresa_id = "6b7eecf2-8cd6-4f7a-82fe-71ec408a0c01"
-    machine_id = "2e6d29aa-0e5c-4f75-af88-7ba9f1005a02"
+    # Test parameters
+    enterprise_id = "test-enterprise-id"
+    machine_id = "test-machine-id"
     
-    print(f"\n1. Testing get_client_data for empresa ID: {empresa_id}")
-    client_data = supabase.get_client_data(empresa_id)
+    print(f"\n1. Testing get_client_data for enterprise ID: {enterprise_id}")
+    client_data = supabase.get_client_data(enterprise_id)
     pretty_print_dict(client_data)
     
-    print(f"\n2. Testing get_client_machines for empresa ID: {empresa_id}")
-    machines_df = supabase.get_client_machines(empresa_id)
+    print(f"\n2. Testing get_client_machines for enterprise ID: {enterprise_id}")
+    machines_df = supabase.get_client_machines(enterprise_id)
     pretty_print_df(machines_df)
     
-    print(f"\n3. Testing get_latest_metrics_by_client for empresa ID: {empresa_id}")
-    metrics_df = supabase.get_latest_metrics_by_client(empresa_id, limit=10)
+    print(f"\n3. Testing get_latest_metrics_by_client for enterprise ID: {enterprise_id}")
+    metrics_df = supabase.get_latest_metrics_by_client(enterprise_id, limit=10)
     pretty_print_df(metrics_df)
     
     print(f"\n4. Testing get_machine_metrics_history for machine ID: {machine_id}")
     history_df = supabase.get_machine_metrics_history(machine_id, days=3)
     pretty_print_df(history_df)
     
-    print(f"\n5. Testing get_client_summary_stats for empresa ID: {empresa_id}")
-    stats = supabase.get_client_summary_stats(empresa_id)
+    print(f"\n5. Testing get_client_summary_stats for enterprise ID: {enterprise_id}")
+    stats = supabase.get_client_summary_stats(enterprise_id)
     pretty_print_dict(stats)
     
-    print(f"\n6. Testing load_client_dashboard_data for empresa ID: {empresa_id}")
-    dashboard_data = supabase.load_client_dashboard_data(empresa_id)
+    print(f"\n6. Testing load_client_dashboard_data for enterprise ID: {enterprise_id}")
+    dashboard_data = supabase.load_client_dashboard_data(enterprise_id)
     print("Dashboard data keys:", list(dashboard_data.keys()))
     print("\nClient info:")
     pretty_print_dict(dashboard_data.get('client_info', {}))
