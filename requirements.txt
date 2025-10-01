@@ -45,3 +45,4 @@ urllib3==2.5.0
 watchdog==6.0.0
 wheel==0.45.1
 supabase==2.20.0
+dotenv==0.9.9
