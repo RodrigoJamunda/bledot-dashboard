@@ -66,9 +66,9 @@ class SupabaseData:
                 # average_metrics[metric_label] = default
                 continue
 
-            avg_metrics[metric_label] = metric_series.mean()
-            max_metrics[metric_label] = metric_series.max()
-            min_metrics[metric_label] = metric_series.min()
+            avg_metrics[metric_label] = float(metric_series.mean())
+            max_metrics[metric_label] = float(metric_series.max())
+            min_metrics[metric_label] = float(metric_series.min())
 
         return avg_metrics, max_metrics, min_metrics
 
@@ -200,12 +200,15 @@ class SupabaseData:
         #Mean CPU and RAM usage from latest metrics
         avg_metrics, max_metrics, min_metrics = self._get_metrics_kpi(metrics_df)
         
-        #Machines with issues (CPU > 80% or RAM > 90%) -> demo
         self._metrics_threshold = {
-            'cpu_usage': 0.8,
-            'ram_usage': 0.9,
-            'cpu_temperature': 80,
-            'gpu_temperature': 80
+            'cpu_usage': {'val': 0.8, 'asc': True},
+            'ram_usage': {'val': 0.9, 'asc': True},
+            'cpu_temperature': {'val': 80, 'asc': True},
+            'gpu_temperature': {'val': 80, 'asc': True},
+            'click_rate': {'val': 0, 'asc': False},
+            'keypress_rate': {'val': 0, 'asc': False},
+            'disk_usage_root': {'val': 0.95, 'asc': True},
+            'disk_usage_home': {'val': 0.95, 'asc': True}
         }
 
         machines_with_issues = 0
@@ -214,8 +217,14 @@ class SupabaseData:
             for metric_label, metric_threshold in self._metrics_threshold.items():
                 if metric_label not in metrics_df.columns:
                     continue
+                
+                metric_series = metrics_df[metric_label]
 
-                high_metric = metrics_df[metric_label] > metric_threshold
+                if metric_threshold['asc']:
+                    high_metric = metric_series >= metric_threshold['val']
+                else:
+                    high_metric = metric_series <= metric_threshold['val']
+
                 issue_series = issue_series | high_metric
 
             machines_with_issues = metrics_df["id_maquina"][issue_series].tolist()

@@ -16,13 +16,9 @@ def run_page():
     supabase_url = get_session_state("supabase_url", debug_supabase_url)
     supabase_key = get_session_state("supabase_key", debug_supabase_key)
     supabase_company_id = st.secrets.supabase["DEBUG_COMPANY_ID"]
-    supabase_machine_id = st.secrets.supabase["DEBUG_MACHINE_ID"]
+    # supabase_machine_id = st.secrets.supabase["DEBUG_MACHINE_ID"]
 
     supabase_data = SupabaseData(supabase_url, supabase_key)
-    st.write(supabase_data.get_client_data(supabase_company_id))
-    st.write(supabase_data.get_client_machines(supabase_company_id))
-    st.write(supabase_data.get_latest_metrics_by_client(supabase_company_id, limit=10))
-    st.write(supabase_data.get_machine_metrics_history(supabase_machine_id, days=30))
     st.write(supabase_data.load_client_dashboard_data(supabase_company_id))
 
 
