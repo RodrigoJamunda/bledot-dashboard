@@ -9,8 +9,12 @@ import pytz
 class SupabaseData:
     def __init__(self, url=None, key=None):
         #Allow passing credentials directly or use environment variables
-        self.url = url or os.getenv("SUPABASE_URL")
-        self.key = key or os.getenv("SUPABASE_KEY")
+        self.url = url or st.secrets.supabase["DEBUG_SUPABASE_URL"]
+        self.key = key or st.secrets.supabase["DEBUG_SUPABASE_KEY"]
+
+        # DEBUG:
+        # self.url = url or os.getenv("SUPABASE_URL")
+        # self.key = key or os.getenv("SUPABASE_KEY")
         
         #Check if credentials are available
         if not self.url or not self.key:
@@ -31,7 +35,7 @@ class SupabaseData:
             print(f"ERROR: {full_error}")
         return None
     
-    def _convert_timestamps(self, df: pd.DataFrame, timestamp_columns: List[str] = None) -> pd.DataFrame:
+    def _convert_timestamps(self, df: pd.DataFrame, timestamp_columns: List[str] | None = None) -> pd.DataFrame:
         if df.empty:
             return df
             
@@ -46,6 +50,28 @@ class SupabaseData:
         
         return df
     
+    def _get_metrics_kpi(self, metrics_df: pd.DataFrame, default: float = 0.0):
+        avg_metrics = {}
+        max_metrics = {}
+        min_metrics = {}
+        for metric_label in metrics_df.columns:
+            if metrics_df.empty:
+                average_metrics[metric_label] = default
+                continue
+
+            metric_series = metrics_df[metric_label].dropna()[metrics_df[metric_label].apply(
+                lambda x: isinstance(x, int) or isinstance(x, float)
+            )]
+            if metric_series.empty:
+                # average_metrics[metric_label] = default
+                continue
+
+            avg_metrics[metric_label] = metric_series.mean()
+            max_metrics[metric_label] = metric_series.max()
+            min_metrics[metric_label] = metric_series.min()
+
+        return avg_metrics, max_metrics, min_metrics
+
     #Load client data by ID
     def get_client_data(self, client_id: str) -> Dict:
         try:
@@ -172,22 +198,35 @@ class SupabaseData:
         offline_machines = total_machines - active_machines
         
         #Mean CPU and RAM usage from latest metrics
-        avg_cpu_usage = metrics_df['cpu_usage'].mean() * 100 if not metrics_df.empty and 'cpu_usage' in metrics_df.columns else 0
-        avg_ram_usage = metrics_df['ram_usage'].mean() * 100 if not metrics_df.empty and 'ram_usage' in metrics_df.columns else 0
+        avg_metrics, max_metrics, min_metrics = self._get_metrics_kpi(metrics_df)
         
         #Machines with issues (CPU > 80% or RAM > 90%) -> demo
+        self._metrics_threshold = {
+            'cpu_usage': 0.8,
+            'ram_usage': 0.9,
+            'cpu_temperature': 80,
+            'gpu_temperature': 80
+        }
+
         machines_with_issues = 0
+        issue_series = pd.Series([])
         if not metrics_df.empty:
-            high_cpu = metrics_df['cpu_usage'] > 0.8 if 'cpu_usage' in metrics_df.columns else pd.Series([])
-            high_ram = metrics_df['ram_usage'] > 0.9 if 'ram_usage' in metrics_df.columns else pd.Series([])
-            machines_with_issues = len(metrics_df[high_cpu | high_ram])
+            for metric_label, metric_threshold in self._metrics_threshold.items():
+                if metric_label not in metrics_df.columns:
+                    continue
+
+                high_metric = metrics_df[metric_label] > metric_threshold
+                issue_series = issue_series | high_metric
+
+            machines_with_issues = metrics_df["id_maquina"][issue_series].tolist()
         
         return {
             'total_machines': total_machines,
             'active_machines': active_machines,
             'offline_machines': offline_machines,
-            'avg_cpu_usage': round(avg_cpu_usage, 2),
-            'avg_ram_usage': round(avg_ram_usage, 2),
+            'avg_metrics': avg_metrics,
+            'max_metrics': max_metrics,
+            'min_metrics': min_metrics,
             'machines_with_issues': machines_with_issues
         }
     

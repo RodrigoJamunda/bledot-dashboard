@@ -2,14 +2,14 @@ import os
 import pandas as pd
 import json
 from dotenv import load_dotenv
-from SupabaseData import SupabaseData
+from supabase_data import SupabaseData
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Get credentials from environment or set them directly for testing
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# SUPABASE_URL = os.getenv("SUPABASE_URL")
+# SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("ERROR: SUPABASE_URL or SUPABASE_KEY not set!")
