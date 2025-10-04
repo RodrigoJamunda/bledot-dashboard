@@ -7,6 +7,7 @@ def config_page():
 
 def run_page():
     """Runs page script"""
+    st.switch_page("pages/company-dash.py")
 
 
 if __name__ == "__main__":

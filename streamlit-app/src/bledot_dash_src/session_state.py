@@ -2,6 +2,18 @@ import streamlit as st
 from typing import Any
 
 
+def init_session_state(key: str, value: Any) -> Any:
+    """Initializes a session state variable if it has no value
+
+    Args:
+        key: key for session state variable
+        value: value of session state variable
+    """
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+    return st.session_state[key]
+
 def set_session_state(key: str, value: Any) -> None:
     """Sets a session state variable
 
