@@ -21,6 +21,18 @@ class SupabaseData:
             print("Error: Supabase credentials not found. Please set SUPABASE_URL and SUPABASE_KEY environment variables.")
         else:
             self.client = self._get_client()
+
+        self._metrics_threshold = {
+            'cpu_usage': {'val': 0.8, 'asc': True},
+            'ram_usage': {'val': 0.9, 'asc': True},
+            'cpu_temperature': {'val': 80, 'asc': True},
+            'gpu_temperature': {'val': 80, 'asc': True},
+            'click_rate': {'val': 0, 'asc': False},
+            'keypress_rate': {'val': 0, 'asc': False},
+            'disk_usage_root': {'val': 0.95, 'asc': True},
+            'disk_usage_home': {'val': 0.95, 'asc': True}
+        }
+
     
     #Load and return Supabase Database Client
     def _get_client(self) -> Client:
@@ -50,13 +62,15 @@ class SupabaseData:
         
         return df
     
-    def _get_metrics_kpi(self, metrics_df: pd.DataFrame, default: float = 0.0):
+    def _get_metrics_kpi(
+        self, metrics_df: pd.DataFrame, default: float = 0.0
+    ) -> tuple[dict[str, pd.Series], dict[str, pd.Series], dict[str, pd.Series]]:
         avg_metrics = {}
         max_metrics = {}
         min_metrics = {}
         for metric_label in metrics_df.columns:
             if metrics_df.empty:
-                average_metrics[metric_label] = default
+                avg_metrics[metric_label] = default
                 continue
 
             metric_series = metrics_df[metric_label].dropna()[metrics_df[metric_label].apply(
@@ -71,6 +85,30 @@ class SupabaseData:
             min_metrics[metric_label] = float(metric_series.min())
 
         return avg_metrics, max_metrics, min_metrics
+    
+    def _get_issues_report(self, metrics_df: pd.DataFrame) -> dict[int, set[str]]:
+        issues: dict[int, set[str]] = {}
+        if metrics_df.empty:
+            return {}
+
+        for metric_label, metric_threshold in self._metrics_threshold.items():
+            if metric_label not in metrics_df.columns:
+                continue
+            
+            metric_series = metrics_df[metric_label]
+
+            if metric_threshold['asc']:
+                high_metric = metric_series >= metric_threshold['val']
+            else:
+                high_metric = metric_series <= metric_threshold['val']
+
+            for machine_id in metrics_df["id_maquina"][high_metric]:
+                if machine_id not in issues:
+                    issues[machine_id] = set()
+                issues[machine_id].add(metric_label)
+
+        return issues
+
 
     #Load client data by ID
     def get_client_data(self, client_id: str) -> Dict:
@@ -131,7 +169,7 @@ class SupabaseData:
             self._handle_error(f"Error loading client's metrics: {e}", e)
             return pd.DataFrame()
     #Load specific machine metrics history
-    def get_machine_metrics_history(self, machine_id: str, days: int = 7) -> pd.DataFrame:
+    def get_machine_metrics_history(self, machine_id: str, days: int = 7) -> dict:
         try:
             # Print the machine ID we're querying for
             print(f"Getting metrics for machine ID: {machine_id}")
@@ -164,16 +202,45 @@ class SupabaseData:
                     print("Returning older records instead")
                     df = pd.DataFrame(response.data)
                     df = self._convert_timestamps(df, ['data_coleta'])
-                    return df
-                return pd.DataFrame()
+
+                    avg_metrics, max_metrics, min_metrics = self._get_metrics_kpi(df)
+                    issues = self._get_issues_report(df)
+
+                    return {
+                        "avg_metrics": avg_metrics,
+                        "max_metrics": max_metrics,
+                        "min_metrics": min_metrics,
+                        "issues": issues
+                    }
+
+                return {
+                    "avg_metrics": None,
+                    "max_metrics": None,
+                    "min_metrics": None,
+                    "issues": None
+                }
                     
             df = pd.DataFrame(response_with_date.data)
             df = self._convert_timestamps(df, ['data_coleta'])
-            return df
+
+            avg_metrics, max_metrics, min_metrics = self._get_metrics_kpi(df)
+            issues = self._get_issues_report(df)
+
+            return {
+                "avg_metrics": avg_metrics,
+                "max_metrics": max_metrics,
+                "min_metrics": min_metrics,
+                "issues": issues
+            }
             
         except Exception as e:
             self._handle_error(f"Error loading machine history: {str(e)}", e)
-            return pd.DataFrame()
+            return {
+                "avg_metrics": None,
+                "max_metrics": None,
+                "min_metrics": None,
+                "issues": None
+            }
     
     #Stats summary (demo)
     def get_client_summary_stats(self, client_id: str) -> Dict:
@@ -200,34 +267,7 @@ class SupabaseData:
         #Mean CPU and RAM usage from latest metrics
         avg_metrics, max_metrics, min_metrics = self._get_metrics_kpi(metrics_df)
         
-        self._metrics_threshold = {
-            'cpu_usage': {'val': 0.8, 'asc': True},
-            'ram_usage': {'val': 0.9, 'asc': True},
-            'cpu_temperature': {'val': 80, 'asc': True},
-            'gpu_temperature': {'val': 80, 'asc': True},
-            'click_rate': {'val': 0, 'asc': False},
-            'keypress_rate': {'val': 0, 'asc': False},
-            'disk_usage_root': {'val': 0.95, 'asc': True},
-            'disk_usage_home': {'val': 0.95, 'asc': True}
-        }
-
-        machines_with_issues = 0
-        issue_series = pd.Series([])
-        if not metrics_df.empty:
-            for metric_label, metric_threshold in self._metrics_threshold.items():
-                if metric_label not in metrics_df.columns:
-                    continue
-                
-                metric_series = metrics_df[metric_label]
-
-                if metric_threshold['asc']:
-                    high_metric = metric_series >= metric_threshold['val']
-                else:
-                    high_metric = metric_series <= metric_threshold['val']
-
-                issue_series = issue_series | high_metric
-
-            machines_with_issues = metrics_df["id_maquina"][issue_series].tolist()
+        machines_with_issues = self._get_issues_report(metrics_df)
         
         return {
             'total_machines': total_machines,
