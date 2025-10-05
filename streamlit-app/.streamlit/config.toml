@@ -10,10 +10,10 @@ fastReruns = false
 runOnSave = true
 
 [theme]
-# primaryColor =
-# backgroundColor =
-# secondaryBackgroundColor =
-# textColor =
+primaryColor = "#274690"
+backgroundColor = "#fffaf9"
+secondaryBackgroundColor = "#ebe6e5"
+textColor = "#527bbf"
 # linkColor =
 # codeBackgroundColor =
 # font = "cool-font, fallback-cool-font, sans-serif"

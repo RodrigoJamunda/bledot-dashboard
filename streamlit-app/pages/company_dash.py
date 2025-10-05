@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from src.bledot_dash_src.supabase_data import SupabaseData
 from src.bledot_dash_src.session_state import (
@@ -10,7 +11,6 @@ from src.bledot_dash_src.dashes.overview import run_overview_dash
 from src.bledot_dash_src.dashes.processing import run_processing_dash
 from src.bledot_dash_src.dashes.hardware import run_hardware_dash
 from src.bledot_dash_src.dashes.software import run_software_dash
-from src.bledot_dash_src.dashes.idle import run_idle_dash
 
 
 def make_sidebar(tab_options: list[str]) -> str:
@@ -35,12 +35,16 @@ def make_sidebar(tab_options: list[str]) -> str:
                 set_session_state("selected_tab", tab_option)
                 st.rerun()
 
+        st.divider()
+        st.write("Área do administrador")
+        st.write("Logout")
+
     return get_session_state("selected_tab")
 
 
 def config_page():
     """Configures page layout"""
-    st.set_page_config(layout="wide")
+    st.set_page_config(layout="wide", page_title="Dashboard - Bledot")
 
 
 def run_page():
@@ -55,18 +59,20 @@ def run_page():
         "company_id", st.secrets.supabase["DEBUG_COMPANY_ID"]
     )  # DEBUG ONLY
 
-    if not "company_data" in st.session_state:
-        supabase_data = SupabaseData(
-            url=get_session_state("database_url"), key=get_session_state("database_key")
-        )
+    with st.spinner("Carregando dados..."):
+        if not "company_data" in st.session_state:
+            supabase_data = SupabaseData(
+                url=get_session_state("database_url"),
+                key=get_session_state("database_key"),
+            )
 
-        company_data = supabase_data.load_client_dashboard_data(
-            get_session_state("company_id")
-        )
+            company_data = supabase_data.load_client_dashboard_data(
+                get_session_state("company_id")
+            )
 
-        init_session_state("company_data", company_data)
-    else:
-        company_data = get_session_state("company_data")
+            init_session_state("company_data", company_data)
+        else:
+            company_data = get_session_state("company_data")
 
     col1, col2 = st.columns([3, 1], vertical_alignment="bottom")
     with col1:
@@ -92,13 +98,7 @@ def run_page():
 
     set_session_state("issues", issues)
 
-    tab_options = [
-        "Visão Geral",
-        "Processamento",
-        "Hardware",
-        "Software",
-        "Ociosidade",
-    ]
+    tab_options = ["Visão Geral", "Processamento", "Hardware", "Software"]
 
     tab_option = make_sidebar(tab_options)
 
@@ -110,9 +110,6 @@ def run_page():
         run_hardware_dash()
     elif tab_option == tab_options[3]:
         run_software_dash()
-    elif tab_option == tab_options[4]:
-        run_idle_dash()
-
 
 if __name__ == "__main__":
     config_page()

@@ -35,20 +35,19 @@ def run_overview_dash():
             )
 
         with subcol2:
-            # disk space
-            color_val_disk_space, color_avg_disk_space = get_colors(
-                "disk_usage_root", issues
-            )
+            # idle
+            color_val_idle, color_avg_idle = get_colors("idle", issues)
+            num_idle = 0
+            for issues in summary_data["machines_with_issues"].values():
+                if "click_rate" in issues and "keypress_rate" in issues:
+                    num_idle += 1
+
             st.altair_chart(
-                create_hsbar_chart(
-                    val=summary_data["avg_metrics"]["disk_usage_root"] * 100,
-                    min_val=summary_data["min_metrics"]["disk_usage_root"] * 100,
-                    max_val=summary_data["max_metrics"]["disk_usage_root"] * 100,
-                    color_val=color_val_disk_space,
-                    color_avg=color_avg_disk_space,
-                    format_str="{:.0f} %",
-                    title="Uso de armazenamento",
-                    width=480,
+                create_card_chart(
+                    val=num_idle,
+                    format_str="{}",
+                    title="Máquinas ociosas",
+                    color=color_avg_idle,
                 )
             )
 

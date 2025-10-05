@@ -30,7 +30,10 @@ class SupabaseData:
             'click_rate': {'val': 0.0, 'asc': False},
             'keypress_rate': {'val': 0.0, 'asc': False},
             'disk_usage_root': {'val': 0.95, 'asc': True},
-            'recent_hardware_failures': {'val': 0.0, 'asc': False}
+            'recent_hardware_failures': {'val': 0.0, 'asc': False},
+            'smart_overall': {'val': None, 'asc': None},
+            'firewall_active': {'val': None, 'asc': None},
+            'failed_logins': {'val': 5, 'asc': True}
         }
 
     
@@ -97,7 +100,13 @@ class SupabaseData:
             
             metric_series = metrics_df[metric_label]
 
-            if metric_threshold['asc']:
+            if metric_label == "smart_overall":
+                high_metric = (metric_series != "PASSED") & (metric_series != "OK") & (~metric_series.isna())
+
+            elif metric_label == "firewall_active":
+                high_metric = metric_series == "TRUE"
+
+            elif metric_threshold['asc']:
                 high_metric = metric_series >= metric_threshold['val']
             else:
                 high_metric = metric_series <= metric_threshold['val']

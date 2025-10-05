@@ -1,13 +1,16 @@
 import altair as alt
 import numpy as np
 import pandas as pd
+import typing
 
 
 default_colors = {
     "background": "lightgray",
     "val": "#5fadde",
-    "avg": "#007fcf"
+    "avg": "#007fcf",
+    "text": "#527bbf",
 }
+
 
 def get_colors(label: str, issues: set[str]) -> tuple[str, str]:
     colors = {
@@ -17,7 +20,12 @@ def get_colors(label: str, issues: set[str]) -> tuple[str, str]:
         "avg_bad": "#d41604",
     }
 
-    if label in issues:
+    if label == "idle":
+        is_bad = ("keypress_rate" in issues) and ("click_rate" in issues)
+    else:
+        is_bad = label in issues
+
+    if is_bad:
         return colors["val_bad"], colors["avg_bad"]
     return colors["val_good"], colors["avg_good"]
 
@@ -115,7 +123,12 @@ def create_speed_chart(
     label = (
         alt.Chart(text)
         .mark_text(
-            align="center", baseline="middle", fontSize=28, fontWeight="bold", dy=-20
+            align="center",
+            baseline="middle",
+            fontSize=28,
+            fontWeight="bold",
+            dy=-20,
+            color=default_colors["text"],
         )
         .encode(text="label:N")
     )
@@ -123,7 +136,12 @@ def create_speed_chart(
     title_label = (
         alt.Chart(text)
         .mark_text(
-            align="center", baseline="middle", fontSize=22, fontWeight="bold", dy=-120
+            align="center",
+            baseline="middle",
+            fontSize=22,
+            fontWeight="bold",
+            dy=-120,
+            color=default_colors["text"],
         )
         .encode(text="title:N")
     )
@@ -192,7 +210,12 @@ def create_hsbar_chart(
     text_label = (
         alt.Chart(text)
         .mark_text(
-            align="left", baseline="middle", fontSize=28, fontWeight="bold", dx=10
+            align="left",
+            baseline="middle",
+            fontSize=28,
+            fontWeight="bold",
+            dx=10,
+            color=default_colors["text"],
         )
         .encode(text=alt.Text("label"))
         .properties(height=height)
@@ -204,7 +227,7 @@ def create_hsbar_chart(
 
 
 def create_card_chart(
-    val: float,
+    val: typing.Any,
     format_str: str,
     title: str,
     color: str = default_colors["avg"],
@@ -216,7 +239,12 @@ def create_card_chart(
     label = (
         alt.Chart(text)
         .mark_text(
-            align="center", baseline="middle", fontSize=56, fontWeight="bold", dy=40, color=color
+            align="center",
+            baseline="middle",
+            fontSize=56,
+            fontWeight="bold",
+            dy=40,
+            color=color,
         )
         .encode(text=alt.Text("label"))
     )
@@ -224,7 +252,12 @@ def create_card_chart(
     title_label = (
         alt.Chart(text)
         .mark_text(
-            align="center", baseline="middle", fontSize=30, fontWeight="bold", dy=-60
+            align="center",
+            baseline="middle",
+            fontSize=30,
+            fontWeight="bold",
+            dy=-60,
+            color=default_colors["text"],
         )
         .encode(text=alt.Text("title"))
     )

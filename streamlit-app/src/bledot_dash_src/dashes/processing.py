@@ -2,9 +2,10 @@ import streamlit as st
 from src.bledot_dash_src.session_state import get_session_state
 from src.bledot_dash_src.charts import get_colors, create_speed_chart, create_card_chart
 
+
 def run_processing_dash():
     st.title("Processamento")
-    
+
     company_data = get_session_state("company_data")
     summary_data = company_data["summary_stats"]
     issues = get_session_state("issues")
@@ -45,7 +46,7 @@ def run_processing_dash():
                 title="Temperatura da CPU",
             )
         )
-    
+
     with col2:
         # gpu usage
         color_val_gpu_usage, color_avg_gpu_usage = get_colors("gpu_usage", issues)
@@ -88,7 +89,7 @@ def run_processing_dash():
                 val=summary_data["avg_metrics"]["gpu_voltage"],
                 format_str="{:.1f}",
                 title="Voltagem da GPU",
-                height=240
+                height=240,
             )
         )
 
@@ -99,7 +100,7 @@ def run_processing_dash():
                     val=summary_data["avg_metrics"]["fan_rpm_cpu"],
                     format_str="{:.0f}",
                     title="RPM da CPU",
-                    height=240
+                    height=240,
                 )
             )
 
@@ -109,9 +110,6 @@ def run_processing_dash():
                     val=summary_data["avg_metrics"]["fan_rpm_gpu"],
                     format_str="{:.0f}",
                     title="RPM da GPU",
-                    height=240
+                    height=240,
                 )
             )
-
-    st.write(summary_data)
-
