@@ -27,10 +27,10 @@ class SupabaseData:
             'ram_usage': {'val': 0.9, 'asc': True},
             'cpu_temperature': {'val': 80, 'asc': True},
             'gpu_temperature': {'val': 80, 'asc': True},
-            'click_rate': {'val': 0, 'asc': False},
-            'keypress_rate': {'val': 0, 'asc': False},
+            'click_rate': {'val': 0.0, 'asc': False},
+            'keypress_rate': {'val': 0.0, 'asc': False},
             'disk_usage_root': {'val': 0.95, 'asc': True},
-            'disk_usage_home': {'val': 0.95, 'asc': True}
+            'recent_hardware_failures': {'val': 0.0, 'asc': False}
         }
 
     

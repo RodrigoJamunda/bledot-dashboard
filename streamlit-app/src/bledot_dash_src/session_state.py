@@ -37,3 +37,14 @@ def get_session_state(key: str, default: Any = None) -> Any:
         return default
 
     return st.session_state[key]
+
+def check_session_state(key: str) -> bool:
+    """Checks if a session state variable exists
+
+    Args:
+        key: key for session state variable
+    
+    Returns:
+        True if session state variable exists, false otherwise
+    """
+    return key in st.session_state
