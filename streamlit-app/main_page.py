@@ -1,5 +1,5 @@
 import streamlit as st
-from bledot_dash_src.session_state import init_session_state
+from src.bledot_dash_src.session_state import init_session_state
 
 
 def config_page():

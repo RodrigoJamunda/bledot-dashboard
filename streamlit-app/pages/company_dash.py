@@ -1,16 +1,16 @@
 import streamlit as st
-from bledot_dash_src.supabase_data import SupabaseData
-from bledot_dash_src.session_state import (
+from src.bledot_dash_src.supabase_data import SupabaseData
+from src.bledot_dash_src.session_state import (
     init_session_state,
     set_session_state,
     get_session_state,
     check_session_state,
 )
-from bledot_dash_src.dashes.overview import run_overview_dash
-from bledot_dash_src.dashes.processing import run_processing_dash
-from bledot_dash_src.dashes.hardware import run_hardware_dash
-from bledot_dash_src.dashes.software import run_software_dash
-from bledot_dash_src.dashes.idle import run_idle_dash
+from src.bledot_dash_src.dashes.overview import run_overview_dash
+from src.bledot_dash_src.dashes.processing import run_processing_dash
+from src.bledot_dash_src.dashes.hardware import run_hardware_dash
+from src.bledot_dash_src.dashes.software import run_software_dash
+from src.bledot_dash_src.dashes.idle import run_idle_dash
 
 
 def make_sidebar(tab_options: list[str]) -> str:

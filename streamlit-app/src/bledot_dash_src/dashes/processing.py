@@ -1,6 +1,6 @@
 import streamlit as st
-from bledot_dash_src.session_state import get_session_state
-from bledot_dash_src.charts import get_colors, create_speed_chart, create_card_chart
+from src.bledot_dash_src.session_state import get_session_state
+from src.bledot_dash_src.charts import get_colors, create_speed_chart, create_card_chart
 
 def run_processing_dash():
     st.title("Processamento")

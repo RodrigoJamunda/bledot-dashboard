@@ -1,6 +1,6 @@
 import streamlit as st
-from bledot_dash_src.session_state import get_session_state
-from bledot_dash_src.charts import (
+from src.bledot_dash_src.session_state import get_session_state
+from src.bledot_dash_src.charts import (
     get_colors,
     create_hsbar_chart,
     create_speed_chart,
