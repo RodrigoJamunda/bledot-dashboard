@@ -42,6 +42,7 @@ def config_page():
     """Configures page layout"""
     st.set_page_config(layout="wide")
 
+
 def run_page():
     """Runs page script"""
 
@@ -54,15 +55,34 @@ def run_page():
         "company_id", st.secrets.supabase["DEBUG_COMPANY_ID"]
     )  # DEBUG ONLY
 
-    supabase_data = SupabaseData(
-        url=get_session_state("database_url"), key=get_session_state("database_key")
-    )
+    if not "company_data" in st.session_state:
+        supabase_data = SupabaseData(
+            url=get_session_state("database_url"), key=get_session_state("database_key")
+        )
 
-    company_data = supabase_data.load_client_dashboard_data(
-        get_session_state("company_id")
-    )
+        company_data = supabase_data.load_client_dashboard_data(
+            get_session_state("company_id")
+        )
 
-    init_session_state("company_data", company_data)
+        init_session_state("company_data", company_data)
+    else:
+        company_data = get_session_state("company_data")
+
+    col1, col2 = st.columns([3, 1], vertical_alignment="bottom")
+    with col1:
+        target_machine_label = st.selectbox(
+            "Máquinas", options=company_data["machines"]["label_maquina"]
+        )
+    with col2:
+        if st.button("Ver mais informações", type="primary"):
+            set_session_state(
+                "machine_id",
+                company_data["machines"][
+                    target_machine_label == company_data["machines"]["label_maquina"]
+                ]["id"].item(),
+            )
+
+            st.switch_page("pages/machine_dash.py")
 
     tab_options = [
         "Visão Geral",
