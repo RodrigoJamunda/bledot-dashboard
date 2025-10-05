@@ -1,16 +1,11 @@
 import streamlit as st
 from bledot_dash_src.session_state import get_session_state
 from bledot_dash_src.charts import (
+    get_colors,
     create_hsbar_chart,
     create_speed_chart,
     create_card_chart,
 )
-
-
-def get_colors(label: str, issues: set[str], colors: dict[str, str]) -> tuple[str, str]:
-    if label in issues:
-        return colors["val_bad"], colors["avg_bad"]
-    return colors["val_good"], colors["avg_good"]
 
 
 def run_overview_dash():
@@ -18,18 +13,7 @@ def run_overview_dash():
 
     company_data = get_session_state("company_data")
     summary_data = company_data["summary_stats"]
-
-    issues = set()
-    for issue_list in summary_data["machines_with_issues"].values():
-        for issue in issue_list:
-            issues.add(issue)
-
-    colors = {
-        "val_good": "#68e39c",
-        "avg_good": "#02ad4a",
-        "val_bad": "#ff6759",
-        "avg_bad": "#d41604",
-    }
+    issues = get_session_state("issues")
 
     col1, col2 = st.columns([2, 1])
 
@@ -37,22 +21,23 @@ def run_overview_dash():
         subcol1, subcol2 = st.columns([1, 1])
 
         with subcol1:
+            # hardware fails
             color_val_fails, color_avg_fails = get_colors(
-                "recent_hardware_failures", issues, colors
+                "recent_hardware_failures", issues
             )
             st.altair_chart(
                 create_card_chart(
                     val=summary_data["avg_metrics"]["recent_hardware_failures"],
                     format_str="{:.0f}",
                     title="Histórico de falhas recentes",
-                    color=color_avg_fails
+                    color=color_avg_fails,
                 )
             )
 
         with subcol2:
             # disk space
             color_val_disk_space, color_avg_disk_space = get_colors(
-                "disk_usage_root", issues, colors
+                "disk_usage_root", issues
             )
             st.altair_chart(
                 create_hsbar_chart(
@@ -61,7 +46,7 @@ def run_overview_dash():
                     max_val=summary_data["max_metrics"]["disk_usage_root"] * 100,
                     color_val=color_val_disk_space,
                     color_avg=color_avg_disk_space,
-                    format_str="{} %",
+                    format_str="{:.0f} %",
                     title="Uso de armazenamento",
                     width=480,
                 )
@@ -69,9 +54,7 @@ def run_overview_dash():
 
     with col2:
         # cpu temperature
-        color_val_cpu_temp, color_avg_cpu_temp = get_colors(
-            "cpu_temperature", issues, colors
-        )
+        color_val_cpu_temp, color_avg_cpu_temp = get_colors("cpu_temperature", issues)
 
         st.altair_chart(
             create_speed_chart(
@@ -88,9 +71,7 @@ def run_overview_dash():
         )
 
         # gpu temperature
-        color_val_gpu_temp, color_avg_gpu_temp = get_colors(
-            "gpu_temperature", issues, colors
-        )
+        color_val_gpu_temp, color_avg_gpu_temp = get_colors("gpu_temperature", issues)
 
         st.altair_chart(
             create_speed_chart(
@@ -107,9 +88,7 @@ def run_overview_dash():
         )
 
         # ram usage
-        color_val_ram_usage, color_avg_ram_usage = get_colors(
-            "ram_usage", issues, colors
-        )
+        color_val_ram_usage, color_avg_ram_usage = get_colors("ram_usage", issues)
 
         st.altair_chart(
             create_speed_chart(

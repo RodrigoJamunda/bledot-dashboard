@@ -84,6 +84,14 @@ def run_page():
 
             st.switch_page("pages/machine_dash.py")
 
+    summary_data = company_data["summary_stats"]
+    issues = set()
+    for issue_list in summary_data["machines_with_issues"].values():
+        for issue in issue_list:
+            issues.add(issue)
+
+    set_session_state("issues", issues)
+
     tab_options = [
         "Visão Geral",
         "Processamento",

@@ -3,6 +3,25 @@ import numpy as np
 import pandas as pd
 
 
+default_colors = {
+    "background": "lightgray",
+    "val": "#5fadde",
+    "avg": "#007fcf"
+}
+
+def get_colors(label: str, issues: set[str]) -> tuple[str, str]:
+    colors = {
+        "val_good": "#68e39c",
+        "avg_good": "#02ad4a",
+        "val_bad": "#ff6759",
+        "avg_bad": "#d41604",
+    }
+
+    if label in issues:
+        return colors["val_bad"], colors["avg_bad"]
+    return colors["val_good"], colors["avg_good"]
+
+
 def frac_val(val: float, start_val: float, end_val: float) -> float:
     if start_val == end_val:
         return 0
@@ -16,11 +35,11 @@ def create_speed_chart(
     end_val: float,
     min_val: float,
     max_val: float,
-    color_val: str,
-    color_avg: str,
     format_str: str,
     title: str,
-    color_bg: str = "lightgray",
+    color_val: str = default_colors["val"],
+    color_avg: str = default_colors["avg"],
+    color_bg: str = default_colors["background"],
     inner_radius: float = 70.0,
     outer_radius: float = 100.0,
     corner_radius: float = 5.0,
@@ -122,13 +141,13 @@ def create_hsbar_chart(
     val: float,
     min_val: float,
     max_val: float,
-    color_val: str,
-    color_avg: str,
     format_str: str,
     title: str,
     start_val: float = 0,
     end_val: float = 100,
-    color_bg: str = "lightgray",
+    color_val: str = default_colors["val"],
+    color_avg: str = default_colors["avg"],
+    color_bg: str = default_colors["background"],
     corner_radius: float = 5.0,
     width: int = 250,
     height: int = 280,
@@ -186,9 +205,9 @@ def create_hsbar_chart(
 
 def create_card_chart(
     val: float,
-    color: str,
     format_str: str,
     title: str,
+    color: str = default_colors["avg"],
     width: int = 250,
     height: int = 280,
 ):
