@@ -20,7 +20,7 @@ def run_page():
     # Logout button
     col1, col2 = st.columns([6, 1])
     with col2:
-        if st.button("Logout", width='stretch'):
+        if st.button("Logout", width="stretch"):
             logout()
             st.experimental_rerun()
     # Initialize session variables
