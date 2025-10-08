@@ -9,13 +9,9 @@ import pytz
 class SupabaseData:
     def __init__(self, url=None, key=None):
         #Allow passing credentials directly or use environment variables
-        self.url = url or st.secrets.supabase["DEBUG_SUPABASE_URL"]
-        self.key = key or st.secrets.supabase["DEBUG_SUPABASE_KEY"]
+        self.url = url or st.secrets.supabase.get("SUPABASE_URL")
+        self.key = key or st.secrets.supabase.get("SUPABASE_KEY")
 
-        # DEBUG:
-        # self.url = url or os.getenv("SUPABASE_URL")
-        # self.key = key or os.getenv("SUPABASE_KEY")
-        
         #Check if credentials are available
         if not self.url or not self.key:
             print("Error: Supabase credentials not found. Please set SUPABASE_URL and SUPABASE_KEY environment variables.")
@@ -39,7 +35,12 @@ class SupabaseData:
     
     #Load and return Supabase Database Client
     def _get_client(self) -> Client:
-        return create_client(self.url, self.key)
+        """Load and return Supabase Database Client"""
+        try:
+            return create_client(self.url, self.key)
+        except Exception as e:
+            st.error(f"Error creating Supabase client: {e}")
+            return None
     
     def _handle_error(self, error_msg: str, e: Exception) -> None:
         full_error = f"{error_msg}: {e}"
@@ -292,7 +293,7 @@ class SupabaseData:
     def load_client_dashboard_data(self, client_id: Optional[str] = None) -> Dict:
         #If no client_id provided, try to get from session state
         if not client_id:
-            client_id = st.session_state.get('client_id') if 'st' in globals() else None
+            client_id = st.session_state.get('company_id') if 'st' in globals() else None
         
         if not client_id:
             if 'st' in globals():

@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 from src.bledot_dash_src.supabase_data import SupabaseData
 from src.bledot_dash_src.session_state import (
@@ -12,7 +11,6 @@ from src.bledot_dash_src.dashes.processing import run_processing_dash
 from src.bledot_dash_src.dashes.hardware import run_hardware_dash
 from src.bledot_dash_src.dashes.software import run_software_dash
 
-
 def make_sidebar(tab_options: list[str]) -> str:
     init_session_state("selected_tab", tab_options[0])
 
@@ -21,73 +19,74 @@ def make_sidebar(tab_options: list[str]) -> str:
         st.divider()
 
         for tab_option in tab_options:
-            if tab_option == get_session_state("selected_tab"):
-                button_type = "primary"
-            else:
-                button_type = "tertiary"
-
-            if st.button(
-                label=tab_option,
-                key=f"tab_button_{tab_option}",
-                type=button_type,
-                use_container_width=True,
-            ):
+            if st.button(tab_option, use_container_width=True):
                 set_session_state("selected_tab", tab_option)
-                st.rerun()
 
         st.divider()
-        st.write("Área do administrador")
-        st.write("Logout")
+        if st.session_state.get("role") == "admin":
+            if st.button("Área do administrador", use_container_width=True):
+                st.switch_page("pages/admin_dash.py")
+        
+        if st.button("Logout", use_container_width=True):
+            from auth.auth_handler import logout
+            logout()
 
     return get_session_state("selected_tab")
-
 
 def config_page():
     """Configures page layout"""
     st.set_page_config(layout="wide", page_title="Dashboard - Bledot")
 
-
 def run_page():
     """Runs page script"""
 
-    if not check_session_state("database_url") or not check_session_state(
-        "database_key"
-    ):
+    # Verify if user is authenticated and company_id is set
+    if not check_session_state("authenticated") or not check_session_state("company_id"):
         st.switch_page("main_page.py")
 
-    init_session_state(
-        "company_id", st.secrets.supabase["DEBUG_COMPANY_ID"]
-    )  # DEBUG ONLY
-
     with st.spinner("Carregando dados..."):
-        if not "company_data" in st.session_state:
-            supabase_data = SupabaseData(
-                url=get_session_state("database_url"),
-                key=get_session_state("database_key"),
-            )
+        company_id = get_session_state("company_id")
 
-            company_data = supabase_data.load_client_dashboard_data(
-                get_session_state("company_id")
-            )
-
-            init_session_state("company_data", company_data)
+        # Load data only if not already loaded or if company_id has changed
+        if "company_data" not in st.session_state or st.session_state.get("loaded_company_id") != company_id:
+            # Load and return Supabase Database Client
+            supabase_data = SupabaseData()
+            company_data = supabase_data.load_client_dashboard_data(company_id)
+            
+            # Store data in session
+            set_session_state("company_data", company_data)
+            set_session_state("loaded_company_id", company_id)
         else:
             company_data = get_session_state("company_data")
 
     col1, col2 = st.columns([3, 1], vertical_alignment="bottom")
     with col1:
-        target_machine_label = st.selectbox(
-            "Máquinas", options=company_data["machines"]["label_maquina"]
-        )
+        if not company_data["machines"].empty:
+            
+            # Verify if there is a 'label_maquina' or similar column
+            machine_columns = company_data["machines"].columns
+            machine_label_col = None
+            
+            for col in ['label_maquina', 'nome_maquina', 'machine_name', 'name', 'id']:
+                if col in machine_columns:
+                    machine_label_col = col
+                    break
+            
+            if machine_label_col:
+                target_machine_label = st.selectbox(
+                    "Selecione uma máquina:",
+                    company_data["machines"][machine_label_col].unique()
+                )
+            else:
+                st.warning("Nenhuma coluna de identificação de máquina encontrada")
+                target_machine_label = None
+        else:
+            st.info("Nenhuma máquina encontrada para esta empresa")
+            target_machine_label = None
+            
     with col2:
-        if st.button("Ver mais informações", type="primary"):
-            set_session_state(
-                "machine_id",
-                company_data["machines"][
-                    target_machine_label == company_data["machines"]["label_maquina"]
-                ]["id"].item(),
-            )
-
+        if st.button("Ver mais informações", type="primary") and target_machine_label:
+            set_session_state("target_machine", target_machine_label)
             st.switch_page("pages/machine_dash.py")
 
     summary_data = company_data["summary_stats"]

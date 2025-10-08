@@ -1,5 +1,5 @@
 import streamlit as st
-from .db_manager import verify_user, get_user_role
+from .supabase_auth import verify_supabase_user, get_user_role_and_id
 import base64
 import os
 
@@ -287,38 +287,37 @@ def authenticate():
             </div>
         """, unsafe_allow_html=True)
 
-        username = st.text_input("E-mail ou usuário")
+        username = st.text_input("Nome da Empresa")
         password = st.text_input("Senha", type="password")
 
         if st.button("Continuar", use_container_width=True):
             if username and password:
-                if verify_user(username, password):
+                if verify_supabase_user(username, password):
+                    # Well authenticated
+                    role, company_id = get_user_role_and_id(username)
+
+                    if not role:
+                        st.error("Não foi possível determinar o papel do usuário.")
+                        st.stop()
+                    
+                    # Save authentication state
                     st.session_state.authenticated = True
                     st.session_state.username = username
-                    st.session_state.role = get_user_role(username)
-                    # Mostrar automaticamente a sidebar após login bem-sucedido
-                    st.session_state.sidebar_state = "expanded"
-                    # Redundância em JavaScript para forçar a abertura da sidebar no login bem-sucedido
-                    st.markdown("""
-                    <script>
-                    window.parent.document.addEventListener('DOMContentLoaded', function() {
-                        setTimeout(function() {
-                            const sidebar = window.parent.document.querySelector('section[data-testid="stSidebar"]');
-                            const sidebarButton = window.parent.document.querySelector('button[kind="header"]');
-                            if (sidebar && sidebarButton) {
-                                sidebar.style.display = 'block';
-                                sidebar.setAttribute('aria-expanded', 'true');
-                                if (sidebarButton.getAttribute('aria-expanded') === 'false') {
-                                    sidebarButton.click();
-                                }
-                            }
-                        }, 100);
-                    });
-                    </script>
-                    """, unsafe_allow_html=True)
-                    st.rerun()
+                    st.session_state.role = role
+                    
+                    # Redirect based on role
+                    if role == 'admin':
+                        st.switch_page("pages/admin_dash.py")
+                    elif role == 'client':
+                        if company_id:
+                            st.session_state.company_id = company_id
+                            st.switch_page("pages/company_dash.py")
+                        else:
+                            st.error("ID da empresa cliente não encontrado.")
+                    else:
+                        st.error("Papel de usuário desconhecido.")
                 else:
-                    st.error("Usuário ou senha incorretos", icon="🔒")
+                    st.error("Empresa ou senha incorretos", icon="🔒")
             else:
                 st.error("Por favor, preencha todos os campos", icon="⚠️")
 
