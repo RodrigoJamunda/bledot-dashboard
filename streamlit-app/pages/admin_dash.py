@@ -57,7 +57,7 @@ def run_page():
                 "data_criacao": "Data de Criação",
                 "is_active": "Ativa?"
             },
-            use_container_width=True,
+            width='stretch',
             hide_index=True
         )
         

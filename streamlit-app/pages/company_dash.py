@@ -19,15 +19,15 @@ def make_sidebar(tab_options: list[str]) -> str:
         st.divider()
 
         for tab_option in tab_options:
-            if st.button(tab_option, use_container_width=True):
+            if st.button(tab_option, width='stretch'):
                 set_session_state("selected_tab", tab_option)
 
         st.divider()
         if st.session_state.get("role") == "admin":
-            if st.button("Área do administrador", use_container_width=True):
+            if st.button("Área do administrador", width='stretch'):
                 st.switch_page("pages/admin_dash.py")
         
-        if st.button("Logout", use_container_width=True):
+        if st.button("Logout", width='stretch'):
             from auth.auth_handler import logout
             logout()
 
