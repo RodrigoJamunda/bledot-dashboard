@@ -9,11 +9,10 @@ from src.bledot_dash_src.charts import (
 
 
 def run_software_dash():
-    st.title("Software")
+    st.header("Software")
 
-    company_data = get_session_state("company_data")
-    summary_data = company_data["summary_stats"]
-    issues = get_session_state("issues")
+    machine_data = get_session_state("machine_data")
+    issues = machine_data["issues"][get_session_state("machine_id")]
 
     col1, col2 = st.columns([1, 1])
 
@@ -40,11 +39,11 @@ def run_software_dash():
 
         st.altair_chart(
             create_speed_chart(
-                val=summary_data["avg_metrics"]["failed_logins"],
+                val=machine_data["avg_metrics"]["failed_logins"],
                 start_val=0,
                 end_val=20,
-                min_val=summary_data["min_metrics"]["failed_logins"],
-                max_val=summary_data["max_metrics"]["failed_logins"],
+                min_val=machine_data["min_metrics"]["failed_logins"],
+                max_val=machine_data["max_metrics"]["failed_logins"],
                 color_val=color_val_login_fail,
                 color_avg=color_avg_login_fail,
                 format_str="{:.0f}",
@@ -55,14 +54,14 @@ def run_software_dash():
     with col2:
         # idle
         color_val_idle, color_avg_idle = get_colors("idle", issues)
-        num_idle = 0
-        for issues in summary_data["machines_with_issues"].values():
-            if "click_rate" in issues and "keypress_rate" in issues:
-                num_idle += 1
+        if "click_rate" in issues and "keypress_rate" in issues:
+            idle = "Ociosa"
+        else:
+            idle = "Não ociosa"
 
         st.altair_chart(
             create_card_chart(
-                val=num_idle,
+                val=idle,
                 format_str="{}",
                 title="Máquinas ociosas",
                 color=color_avg_idle,
@@ -72,9 +71,7 @@ def run_software_dash():
 
         # packet loss
         color_val_packet_loss, color_avg_packet_loss = get_colors("packet_loss", issues)
-        avg_packet_loss = np.mean(
-            [np.mean(x) for x in company_data["latest_metrics"]["pkg_loss_list"]]
-        )
+        avg_packet_loss = machine_data["pkg_loss_mean"]
 
         st.altair_chart(
             create_card_chart(

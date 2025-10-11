@@ -11,7 +11,7 @@ from src.bledot_dash_src.charts import (
 
 
 def run_overview_dash():
-    st.title("Visão Geral")
+    st.header("Visão Geral")
 
     company_data = get_session_state("company_data")
     summary_data = company_data["summary_stats"]

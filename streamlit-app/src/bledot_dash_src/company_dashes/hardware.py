@@ -11,7 +11,7 @@ from src.bledot_dash_src.charts import (
 
 
 def run_hardware_dash():
-    st.title("Hardware")
+    st.header("Hardware")
 
     company_data = get_session_state("company_data")
     summary_data = company_data["summary_stats"]

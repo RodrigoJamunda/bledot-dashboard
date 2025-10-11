@@ -7,11 +7,11 @@ from src.bledot_dash_src.session_state import (
     get_session_state,
     check_session_state,
 )
-from src.bledot_dash_src.dashes.overview import run_overview_dash
-from src.bledot_dash_src.dashes.processing import run_processing_dash
-from src.bledot_dash_src.dashes.hardware import run_hardware_dash
-from src.bledot_dash_src.dashes.software import run_software_dash
-from src.bledot_dash_src.dashes.issues import run_issues_dash
+from src.bledot_dash_src.company_dashes.overview import run_overview_dash
+from src.bledot_dash_src.company_dashes.processing import run_processing_dash
+from src.bledot_dash_src.company_dashes.hardware import run_hardware_dash
+from src.bledot_dash_src.company_dashes.software import run_software_dash
+from src.bledot_dash_src.company_dashes.issues import run_issues_dash
 from auth.user_db_manager import change_password_form
 from auth.auth_handler import logout
 
@@ -126,6 +126,8 @@ def run_page():
                 for issue in issue_list:
                     issues.add(issue)
             set_session_state("issues", issues)
+
+            st.title(f"Métricas - {company_data['client_info']['nome_empresa']}")
 
             tab_options = [
                 "Visão Geral",

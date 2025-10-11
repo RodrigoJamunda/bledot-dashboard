@@ -3,7 +3,7 @@ from src.bledot_dash_src.session_state import get_session_state
 
 
 def run_issues_dash():
-    st.title("Máquinas comprometidas")
+    st.header("Máquinas comprometidas")
 
     company_machines = get_session_state("company_data")["machines"]
     machines_with_issues = get_session_state("machines_with_issues")

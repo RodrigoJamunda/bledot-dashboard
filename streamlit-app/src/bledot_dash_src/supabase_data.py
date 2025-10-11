@@ -29,7 +29,7 @@ class SupabaseData:
             'click_rate': {'val': 0.0, 'asc': False, 'str': 'Ociosidade do mouse'},
             'keypress_rate': {'val': 0.0, 'asc': False, 'str': 'Ociosidade do teclado'},
             'disk_usage_root': {'val': 0.95, 'asc': True, 'str': 'Espaço em disco'},
-            'recent_hardware_failures': {'val': 0.0, 'asc': False, 'str': 'Falhas de hardware'},
+            'recent_hardware_failures': {'val': 0.1, 'asc': True, 'str': 'Falhas de hardware'},
             'smart_overall': {'val': None, 'asc': None, 'str': 'Status do SMART'},
             'firewall_active': {'val': None, 'asc': None, 'str': 'Status do Firewall'},
             'failed_logins': {'val': 5, 'asc': True, 'str': 'Tentativas de login'},
@@ -147,7 +147,25 @@ class SupabaseData:
             mach_ind[row["id_maquina"]] += 1
 
         return power_consumption
+    
+    def _get_machine_config(self, df: pd.DataFrame) -> dict:
+        config_metrics = [
+            "host_name", "model", "operation_sys", "os_version", "architecture",
+            "processor", "gpu_name", "inter_gpu_name", "motherboard_manuf",
+            "motherboard_name", "motherboard_snum", "mac", "ipv4", "ipv6",
+            "installed_softwares", "country", "region_name", "city", "lat", "lon"
+        ]
+        config = {}
 
+        for metric in config_metrics:
+            metric_series = df[metric].dropna()
+
+            if len(metric_series) == 0:
+                config[metric] = None
+
+            config[metric] = metric_series[0]
+
+        return config
 
     #Load client data by ID
     def get_client_data(self, client_id: str) -> Dict:
@@ -244,19 +262,51 @@ class SupabaseData:
 
                     avg_metrics, max_metrics, min_metrics = self._get_metrics_kpi(df)
                     issues = self._get_issues_report(df)
+                    power_consumption = self._get_power_consumption(df)
+
+                    power_consumption_hist = {
+                            "avg": [],
+                            "min": [],
+                            "max": []
+                        }
+
+                    for entry in power_consumption:
+                        entry_hist = []
+                        for subentry in entry:
+                            entry_hist.append(subentry["instant_power_consumption"])
+
+                        power_consumption_hist["avg"].append(np.average(entry_hist))
+                        power_consumption_hist["max"].append(np.max(entry_hist))
+                        power_consumption_hist["min"].append(np.min(entry_hist))
+
+                    power_consumption_hist["avg"].reverse()
+                    power_consumption_hist["max"].reverse()
+                    power_consumption_hist["min"].reverse()
+
+                    pkg_loss_mean = np.mean(
+                        [np.mean(x) for x in df["pkg_loss_list"]]
+                    )
+
+                    config = self._get_machine_config(df)
 
                     return {
                         "avg_metrics": avg_metrics,
                         "max_metrics": max_metrics,
                         "min_metrics": min_metrics,
-                        "issues": issues
+                        "power_consumption_hist": power_consumption_hist,
+                        "pkg_loss_mean": pkg_loss_mean,
+                        "issues": issues,
+                        "config": config
                     }
 
                 return {
                     "avg_metrics": None,
                     "max_metrics": None,
                     "min_metrics": None,
-                    "issues": None
+                    "power_consumption_hist": None,
+                    "pkg_loss_mean": None,
+                    "issues": None,
+                    "config": None
                 }
                     
             df = pd.DataFrame(response_with_date.data)
@@ -264,12 +314,41 @@ class SupabaseData:
 
             avg_metrics, max_metrics, min_metrics = self._get_metrics_kpi(df)
             issues = self._get_issues_report(df)
+            power_consumption = self._get_power_consumption(df)
+
+            power_consumption_hist = {
+                    "avg": [],
+                    "min": [],
+                    "max": []
+                }
+
+            for entry in power_consumption:
+                entry_hist = []
+                for subentry in entry:
+                    entry_hist.append(subentry["instant_power_consumption"])
+
+                power_consumption_hist["avg"].append(np.average(entry_hist))
+                power_consumption_hist["max"].append(np.max(entry_hist))
+                power_consumption_hist["min"].append(np.min(entry_hist))
+
+            power_consumption_hist["avg"].reverse()
+            power_consumption_hist["max"].reverse()
+            power_consumption_hist["min"].reverse()
+
+            pkg_loss_mean = np.mean(
+                [np.mean(x) for x in df["pkg_loss_list"]]
+            )
+
+            config = self._get_machine_config(df)
 
             return {
                 "avg_metrics": avg_metrics,
                 "max_metrics": max_metrics,
                 "min_metrics": min_metrics,
-                "issues": issues
+                "power_consumption_hist": power_consumption_hist,
+                "pkg_loss_mean": pkg_loss_mean,
+                "issues": issues,
+                "config": config
             }
             
         except Exception as e:
@@ -278,7 +357,10 @@ class SupabaseData:
                 "avg_metrics": None,
                 "max_metrics": None,
                 "min_metrics": None,
-                "issues": None
+                "power_consumption_hist": None,
+                "pkg_loss_mean": None,
+                "issues": None,
+                "config": None
             }
     
     #Stats summary (demo)

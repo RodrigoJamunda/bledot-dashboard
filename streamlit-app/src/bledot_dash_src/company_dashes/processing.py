@@ -4,7 +4,7 @@ from src.bledot_dash_src.charts import get_colors, create_speed_chart, create_ca
 
 
 def run_processing_dash():
-    st.title("Processamento")
+    st.header("Processamento")
 
     company_data = get_session_state("company_data")
     summary_data = company_data["summary_stats"]
