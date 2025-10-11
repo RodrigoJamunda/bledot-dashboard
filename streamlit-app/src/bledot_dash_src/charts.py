@@ -269,3 +269,95 @@ def create_card_chart(
     )
 
     return final_chart
+
+
+from datetime import datetime
+
+
+def create_line_chart(
+    val: list[float],
+    min_val: list[float],
+    max_val: list[float],
+    title: str,
+    start_val: float = 10,
+    end_val: float = 20,
+    color_val: str = default_colors["val"],
+    color_avg: str = default_colors["avg"],
+    color_bg: str = default_colors["background"],
+    width: int = 600,
+    height: int = 500,
+    threshold: float = -1000,
+):
+    n = len(val)
+    time_data = pd.to_datetime(pd.date_range(datetime.now(), periods=n, freq="1h"))
+
+    source = pd.DataFrame(
+        {
+            "time": time_data,
+            "val": pd.Series(val),
+            "min": pd.Series(min_val),
+            "max": pd.Series(max_val),
+            "color": color_avg,
+            "title": title,
+        }
+    )
+
+    chart = (
+        alt.Chart(source)
+        .mark_line(point=True, strokeWidth=3)
+        .encode(
+            x=alt.X("time:T", title="Time", axis=alt.Axis(labels=False)),
+            y=alt.Y("val:Q", title=title, scale=alt.Scale(domain=[start_val, end_val])),
+            color=alt.Color("color:N", legend=None, scale=None),
+            tooltip=[alt.Tooltip("val:Q", title=title, format=".1f")],
+        )
+    )
+
+    chart_min = (
+        alt.Chart(source)
+        .mark_line(point=False, strokeWidth=3, color=color_val)
+        .encode(
+            x=alt.X("time:T", title="Time", axis=alt.Axis(labels=False)),
+            y=alt.Y("min:Q", title=title, scale=alt.Scale(domain=[start_val, end_val])),
+            tooltip=[alt.Tooltip("min:Q", title=title, format=".1f")],
+        )
+    )
+
+    chart_max = (
+        alt.Chart(source)
+        .mark_line(point=False, strokeWidth=3, color=color_val)
+        .encode(
+            x=alt.X("time:T", title=None, axis=alt.Axis(labels=False)),
+            y=alt.Y("max:Q", title=title, scale=alt.Scale(domain=[start_val, end_val])),
+            tooltip=[alt.Tooltip("max:Q", title=title, format=".1f")],
+        )
+    )
+
+    text_label = (
+        alt.Chart(source)
+        .mark_text(
+            align="center",
+            baseline="top",
+            fontSize=28,
+            fontWeight="bold",
+            color=default_colors["text"],
+        )
+        .encode(text=alt.Text("title"))
+        .properties(width=width, height=0.2 * height)
+    )
+
+    threshold_df = pd.DataFrame({"val": [threshold]})
+
+    threshold_chart = (
+        alt.Chart(threshold_df)
+        .mark_rule(color=color_bg, strokeWidth=2, strokeDash=[5, 5])
+        .encode(y="val:Q")
+    )
+
+    final_graph = (chart_min + chart_max + chart + threshold_chart).properties(
+        width=width, height=0.8 * height
+    )
+
+    final_chart = alt.vconcat(text_label, final_graph).configure_view(stroke=None)
+
+    return final_chart

@@ -1,10 +1,12 @@
 import streamlit as st
+import numpy as np
 from src.bledot_dash_src.session_state import get_session_state
 from src.bledot_dash_src.charts import (
     get_colors,
     create_hsbar_chart,
     create_speed_chart,
     create_card_chart,
+    create_line_chart,
 )
 
 
@@ -50,6 +52,34 @@ def run_overview_dash():
                     color=color_avg_idle,
                 )
             )
+
+        # power consumption
+        color_val_power_consumption, color_avg_power_consumption = get_colors(
+            "instant_power_consumption", issues
+        )
+
+        power_consumption_threshold = get_session_state("metrics_threshold")[
+            "instant_power_consumption"
+        ]["val"]
+
+        st.altair_chart(
+            create_line_chart(
+                val=summary_data["power_consumption_hist"]["avg"],
+                min_val=summary_data["power_consumption_hist"]["min"],
+                max_val=summary_data["power_consumption_hist"]["max"],
+                title="Consumo energético (W)",
+                color_val=color_val_power_consumption,
+                color_avg=color_avg_power_consumption,
+                start_val=max(
+                    0, np.min(summary_data["power_consumption_hist"]["min"]) - 2
+                ),
+                end_val=max(
+                    power_consumption_threshold + 2,
+                    np.max(summary_data["power_consumption_hist"]["max"]) + 2,
+                ),
+                threshold=power_consumption_threshold,
+            )
+        )
 
     with col2:
         # cpu temperature

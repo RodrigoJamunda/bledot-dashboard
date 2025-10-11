@@ -1,10 +1,13 @@
 import os
 import pandas as pd
+import numpy as np
 import streamlit as st
+from bledot_dash_src.download_metrics import get_download_data
 from supabase import create_client, Client
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
 import pytz
+from bledot_dash_src.session_state import init_session_state, set_session_state
 
 class SupabaseData:
     def __init__(self, url=None, key=None):
@@ -19,18 +22,21 @@ class SupabaseData:
             self.client = self._get_client()
 
         self._metrics_threshold = {
-            'cpu_usage': {'val': 0.8, 'asc': True},
-            'ram_usage': {'val': 0.9, 'asc': True},
-            'cpu_temperature': {'val': 80, 'asc': True},
-            'gpu_temperature': {'val': 80, 'asc': True},
-            'click_rate': {'val': 0.0, 'asc': False},
-            'keypress_rate': {'val': 0.0, 'asc': False},
-            'disk_usage_root': {'val': 0.95, 'asc': True},
-            'recent_hardware_failures': {'val': 0.0, 'asc': False},
-            'smart_overall': {'val': None, 'asc': None},
-            'firewall_active': {'val': None, 'asc': None},
-            'failed_logins': {'val': 5, 'asc': True}
+            'cpu_usage': {'val': 0.8, 'asc': True, 'str': 'Uso de CPU'},
+            'ram_usage': {'val': 0.9, 'asc': True, 'str': 'Uso de RAM'},
+            'cpu_temperature': {'val': 80, 'asc': True, 'str': 'Temperatura da CPU'},
+            'gpu_temperature': {'val': 80, 'asc': True, 'str': 'Temperatura da GPU'},
+            'click_rate': {'val': 0.0, 'asc': False, 'str': 'Ociosidade do mouse'},
+            'keypress_rate': {'val': 0.0, 'asc': False, 'str': 'Ociosidade do teclado'},
+            'disk_usage_root': {'val': 0.95, 'asc': True, 'str': 'Espaço em disco'},
+            'recent_hardware_failures': {'val': 0.0, 'asc': False, 'str': 'Falhas de hardware'},
+            'smart_overall': {'val': None, 'asc': None, 'str': 'Status do SMART'},
+            'firewall_active': {'val': None, 'asc': None, 'str': 'Status do Firewall'},
+            'failed_logins': {'val': 5, 'asc': True, 'str': 'Tentativas de login'},
+            'instant_power_consumption': {'val': 25, 'asc': True, 'str': 'Consumo energético'}
         }
+
+        init_session_state("metrics_threshold", self._metrics_threshold)
 
     
     #Load and return Supabase Database Client
@@ -118,6 +124,29 @@ class SupabaseData:
                 issues[machine_id].add(metric_label)
 
         return issues
+
+    def _get_power_consumption(self, metrics_df: pd.DataFrame) -> list[list[dict[str, float]]]:
+        power_consumption : list[list[dict[str, float]]] = []
+        mach_ind : dict[int] = {}
+        for _, row in metrics_df.iterrows():
+            if not row["id_maquina"] in mach_ind.keys():
+                mach_ind[row["id_maquina"]] = 0
+
+            if row["instant_power_consumption"] is None:
+                continue
+
+            entry = {
+                "id_maquina": row["id_maquina"],
+                "instant_power_consumption": row["instant_power_consumption"]
+            }
+
+            while mach_ind[row["id_maquina"]] >= len(power_consumption):
+                power_consumption.append([])
+
+            power_consumption[mach_ind[row["id_maquina"]]].append(entry)
+            mach_ind[row["id_maquina"]] += 1
+
+        return power_consumption
 
 
     #Load client data by ID
@@ -264,6 +293,7 @@ class SupabaseData:
                 'offline_machines': 0,
                 'avg_cpu_usage': 0,
                 'avg_ram_usage': 0,
+                'power_consumption_hist': [],
                 'machines_with_issues': 0
             }
         
@@ -273,12 +303,34 @@ class SupabaseData:
         cutoff_time = datetime.now(pytz.UTC) - timedelta(hours=24)
         active_machines = len(machines_df[machines_df['ultimo_contato'] > cutoff_time]) if not machines_df.empty else 0
         offline_machines = total_machines - active_machines
+
+        power_consumption = self._get_power_consumption(metrics_df)
         
         #Mean CPU and RAM usage from latest metrics
         avg_metrics, max_metrics, min_metrics = self._get_metrics_kpi(metrics_df)
         
+        power_consumption_hist = {
+            "avg": [],
+            "max": [],
+            "min": []
+        }
+
+        for entry in power_consumption:
+            entry_hist = []
+            for subentry in entry:
+                entry_hist.append(subentry["instant_power_consumption"])
+
+            power_consumption_hist["avg"].append(np.average(entry_hist))
+            power_consumption_hist["max"].append(np.max(entry_hist))
+            power_consumption_hist["min"].append(np.min(entry_hist))
+
+        power_consumption_hist["avg"].reverse()
+        power_consumption_hist["max"].reverse()
+        power_consumption_hist["min"].reverse()
+
         machines_with_issues = self._get_issues_report(metrics_df)
-        
+        init_session_state("machines_with_issues", machines_with_issues)
+
         return {
             'total_machines': total_machines,
             'active_machines': active_machines,
@@ -286,6 +338,7 @@ class SupabaseData:
             'avg_metrics': avg_metrics,
             'max_metrics': max_metrics,
             'min_metrics': min_metrics,
+            'power_consumption_hist': power_consumption_hist,
             'machines_with_issues': machines_with_issues
         }
     
@@ -307,6 +360,8 @@ class SupabaseData:
         machines_df = self.get_client_machines(client_id)
         metrics_df = self.get_latest_metrics_by_client(client_id)
         summary_stats = self.get_client_summary_stats(client_id)
+
+        set_session_state("download_data", get_download_data(metrics_df))
         
         return {
             'client_info': client_data,

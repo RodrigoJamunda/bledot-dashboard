@@ -210,3 +210,6 @@ __marimo__/
 
 # Streamlit
 secrets.toml
+
+# Temp files
+temp/

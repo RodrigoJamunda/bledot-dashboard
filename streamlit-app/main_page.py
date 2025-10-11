@@ -1,5 +1,5 @@
 import streamlit as st
-from src.bledot_dash_src.session_state import init_session_state
+from src.bledot_dash_src.session_state import init_session_state, set_session_state
 from auth.auth_handler import authenticate, logout  # imports authentication functions
 
 def config_page():
@@ -15,6 +15,7 @@ def config_page():
 def run_page():
     """Runs page script"""
     # Authentication: if not authenticated, show login screen
+    # set_session_state("authenticated", True)
     if not authenticate():
         st.stop()
     # Logout button
