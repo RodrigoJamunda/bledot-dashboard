@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import traceback
 from src.bledot_dash_src.supabase_data import SupabaseData
@@ -90,6 +91,13 @@ def make_sidebar(tab_options: list[str]) -> str:
 def config_page():
     """Configures page layout"""
     st.set_page_config(layout="wide", page_title="Dashboard - Bledot")
+
+    curr_dir = os.path.dirname(__file__)
+    download_dir = os.path.join(curr_dir, "temp")
+    if not os.path.exists(download_dir):
+        os.mkdir(download_dir)
+
+    init_session_state("download_dir", download_dir)
 
 
 def run_page():
