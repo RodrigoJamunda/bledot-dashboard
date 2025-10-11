@@ -61,7 +61,7 @@ def set_company_password(company_name: str, plain_password: str):
     try:
         response = supabase.table("empresas").update({
             "password_hash": password_hash
-        }).eq("nome_empresa", company_name).eq("role", "client").execute()
+        }).eq("nome_empresa", company_name).execute()
         
         if not response.data:
             return False, f"Empresa cliente '{company_name}' não encontrada."
